@@ -407,7 +407,18 @@ export function searchAssetBuilder(kysely: Kysely<DB>, options: AssetSearchBuild
     .$if(!!options.deviceId, (qb) => qb.where('assets.deviceId', '=', options.deviceId!))
     .$if(!!options.id, (qb) => qb.where('assets.id', '=', asUuid(options.id!)))
     .$if(!!options.libraryId, (qb) => qb.where('assets.libraryId', '=', asUuid(options.libraryId!)))
-    .$if(!!options.userIds, (qb) => qb.where('assets.ownerId', '=', anyUuid(options.userIds!)))
+    .$if(!!options.userIds, (qb) => {
+      if (!!options.includeSharedAlbums) {
+        return qb.where('assets.ownerId', '=', anyUuid(options.userIds!))
+      } else {
+        return qb.leftJoin('albums_assets_assets', 'assets.id', 'album_assets_assets.assetsId')
+        .leftJoin('album_shared_users_users', 'album_assets_assets.albumsId', 'albums_shared_users_users.albumsId')
+        .where((eb) => eb.or([
+          eb('assets.ownerId', '=', anyUuid(options.userIds!)),
+          eb('album_shared_users_users.usersId', '=', anyUuid(options.userIds!))
+        ]))
+      }
+    })
     .$if(!!options.encodedVideoPath, (qb) => qb.where('assets.encodedVideoPath', '=', options.encodedVideoPath!))
     .$if(!!options.originalPath, (qb) =>
       qb.where(sql`f_unaccent(assets."originalPath")`, 'ilike', sql`'%' || f_unaccent(${options.originalPath}) || '%'`),

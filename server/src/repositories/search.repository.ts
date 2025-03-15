@@ -59,6 +59,7 @@ export interface SearchUserIdOptions {
 export type SearchIdOptions = SearchAssetIDOptions & SearchUserIdOptions;
 
 export interface SearchStatusOptions {
+  includeSharedAlbums?: boolean;
   isArchived?: boolean;
   isEncoded?: boolean;
   isFavorite?: boolean;
